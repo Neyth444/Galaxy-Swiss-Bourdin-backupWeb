@@ -1,21 +1,27 @@
 <?php
+// démarre la session
 session_start();
+
+// vérif si l'utilisateur est connecté et admin (id_role = 1), sinon redirige vers login
 if (!isset($_SESSION['id_role'], $_SESSION['id_user']) || $_SESSION['id_role'] != 1) {
     header("Location: login.php");
     exit();
 }
 
-// Connexion à la base de données
+// infos de connexion à la bdd
 $serveur = "localhost";
 $utilisateur = "root";
 $mdpBDD = "";
 $nomBDD = "bisounours";
 
 try {
+    // init de la connexion bdd avec pdo, en utf8
     $connexion = new PDO("mysql:host=$serveur;dbname=$nomBDD;charset=utf8", $utilisateur, $mdpBDD);
+    
+    // active les erreurs en mode exception
     $connexion->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // Récupérer les fiches de frais avec leur état
+    // prépare la requête pour choper les fiches de frais d’un user + total calculé
     $stmt = $connexion->prepare("
         SELECT f.id_fiche, f.date, f.commentaire, f.etat AS etat_fiche, 
                SUM(l.quantite * l.prix_unitaire) AS total_frais
@@ -25,14 +31,22 @@ try {
         GROUP BY f.id_fiche
         ORDER BY f.date DESC
     ");
+    
+    // bind de l'id_user depuis la session
     $stmt->bindParam(':id_user', $_SESSION['id_user']);
+    
+    // exécution de la requête
     $stmt->execute();
+    
+    // récup des résultats sous forme de tableau associatif
     $fiches = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 } catch (PDOException $e) {
+    // affiche un message si erreur lors de la connexion ou requête
     die("Erreur : " . $e->getMessage());
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>

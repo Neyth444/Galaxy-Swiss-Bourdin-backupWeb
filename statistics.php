@@ -1,21 +1,25 @@
 <?php
+// démarre session
 session_start();
+
+// accès autorisé uniquement pour rôle admin (id_role = 3), sinon redirige
 if (!isset($_SESSION['id_role']) || $_SESSION['id_role'] != 3) {
     header("Location: login.php");
     exit();
 }
 
+// config bdd
 $serveur = "localhost";
 $utilisateur = "root";
 $mdpBDD = "";
 $nomBDD = "bisounours";
 
 try {
-    // Connexion à la base de données
+    // connexion à la bdd via pdo
     $connexion = new PDO("mysql:host=$serveur;dbname=$nomBDD;charset=utf8", $utilisateur, $mdpBDD);
     $connexion->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // Moyenne des dépenses par type de frais
+    // récup moyenne des dépenses par type de frais
     $stmtMoyenne = $connexion->query("
         SELECT t.type, AVG(l.prix_unitaire * l.quantite) AS moyenne
         FROM ligne_frais l
@@ -24,7 +28,7 @@ try {
     ");
     $moyennes = $stmtMoyenne->fetchAll(PDO::FETCH_ASSOC);
 
-    // Total des dépenses par type de frais
+    // récup total des dépenses par type de frais
     $stmtTotal = $connexion->query("
         SELECT t.type, SUM(l.prix_unitaire * l.quantite) AS total
         FROM ligne_frais l
@@ -33,19 +37,21 @@ try {
     ");
     $totals = $stmtTotal->fetchAll(PDO::FETCH_ASSOC);
 
+    // récup nombre d'utilisateurs par rôle
     $stmtUsers = $connexion->query("
-    SELECT r.role AS nom_role, COUNT(u.id_user) AS total_users
-    FROM user u
-    JOIN role r ON u.role = r.id_role
-    GROUP BY r.role
-");
-
+        SELECT r.role AS nom_role, COUNT(u.id_user) AS total_users
+        FROM user u
+        JOIN role r ON u.role = r.id_role
+        GROUP BY r.role
+    ");
     $userStats = $stmtUsers->fetchAll(PDO::FETCH_ASSOC);
 
 } catch (PDOException $e) {
+    // affiche msg d’erreur si connexion ou requête plante
     die("Erreur : " . $e->getMessage());
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="fr">

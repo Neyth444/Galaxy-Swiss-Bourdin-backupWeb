@@ -1,55 +1,66 @@
 <?php
+// démarre session
 session_start();
+
+// vérif que session active, sinon redirige vers login
 if (!isset($_SESSION['id_role'])) {
     header("Location: login.php");
     exit();
 }
 
+// config connexion bdd
 $serveur = "localhost";
 $utilisateur = "root";
 $mdpBDD = "";
 $nomBDD = "bisounours";
 
 try {
+    // connexion à la bdd avec pdo + gestion des erreurs activée
     $connexion = new PDO("mysql:host=$serveur;dbname=$nomBDD;charset=utf8", $utilisateur, $mdpBDD);
     $connexion->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // Récupérer les détails de la fiche
+    // vérif que l'id de la fiche est bien présent en GET
     if (isset($_GET['id_fiche'])) {
         $id_fiche = intval($_GET['id_fiche']);
 
-        // Récupération de l'état de la fiche
+        // récup status de la fiche (ex: Non Traité, Traité, etc.)
         $stmt_etat = $connexion->prepare("SELECT status FROM fiche WHERE id_fiche = :id_fiche");
         $stmt_etat->bindParam(':id_fiche', $id_fiche);
         $stmt_etat->execute();
         $etat_fiche = $stmt_etat->fetch(PDO::FETCH_ASSOC)['status'];
 
-        $stmt = $connexion->prepare(
-            "SELECT l.id_typefrais, l.quantite, l.prix_unitaire, l.date_depense, l.justificatif, t.type
+        // récup détails des lignes de frais (type, quantité, prix, date, justificatif)
+        $stmt = $connexion->prepare("
+            SELECT l.id_typefrais, l.quantite, l.prix_unitaire, l.date_depense, l.justificatif, t.type
             FROM ligne_frais l
             JOIN type_frais t ON l.id_typefrais = t.id_lf
-            WHERE l.id_fiche = :id_fiche"
-        );
+            WHERE l.id_fiche = :id_fiche
+        ");
         $stmt->bindParam(':id_fiche', $id_fiche);
         $stmt->execute();
         $details_fiche = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Calcul du total des frais
-        $stmt_total = $connexion->prepare(
-            "SELECT SUM(l.quantite * l.prix_unitaire) AS total_frais
+        // calcule total des frais de la fiche (somme des quantités × prix unitaires)
+        $stmt_total = $connexion->prepare("
+            SELECT SUM(l.quantite * l.prix_unitaire) AS total_frais
             FROM ligne_frais l
-            WHERE l.id_fiche = :id_fiche"
-        );
+            WHERE l.id_fiche = :id_fiche
+        ");
         $stmt_total->bindParam(':id_fiche', $id_fiche);
         $stmt_total->execute();
         $total_frais = $stmt_total->fetch(PDO::FETCH_ASSOC)['total_frais'];
+
     } else {
+        // si aucun id_fiche fourni, stoppe avec msg
         die("Aucune fiche sélectionnée.");
     }
+
 } catch (PDOException $e) {
+    // affiche msg si erreur lors de la connexion ou requête
     die("Erreur : " . $e->getMessage());
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>

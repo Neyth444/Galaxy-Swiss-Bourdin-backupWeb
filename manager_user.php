@@ -1,32 +1,41 @@
 <?php
+// démarre session pour accès au rôle
 session_start();
+
+// vérif que l'utilisateur a bien le rôle admin (id_role = 3), sinon redirige vers login
 if (!isset($_SESSION['id_role']) || $_SESSION['id_role'] != 3) {
     header("Location: login.php");
     exit();
 }
 
-// Connexion à la base de données
+// config connexion bdd
 $servername = "localhost";
 $username = "root";
 $password = "";
 $dbname = "bisounours";
 
-$message = ''; // Variable pour message 
+// msg pour retour utilisateur
+$message = '';
 
 try {
+    // connexion à la bdd via pdo
     $pdo = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // Supprimer un utilisateur
+    // si requête en post avec demande de suppression
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_user'])) {
         $id_user_to_delete = intval($_POST['delete_user']);
+
+        // requête pour delete l'utilisateur ciblé
         $stmt = $pdo->prepare("DELETE FROM user WHERE id_user = :id_user");
         $stmt->bindParam(':id_user', $id_user_to_delete);
         $stmt->execute();
+
+        // msg de succès
         $message = "L'utilisateur a bien été supprimé.";
     }
 
-    // Mettre à jour un utilisateur
+    // si requête en post pour maj utilisateur
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_user'])) {
         $id_user = intval($_POST['id_user']);
         $prenom = htmlspecialchars(trim($_POST['fname']));
@@ -34,6 +43,7 @@ try {
         $email = htmlspecialchars(trim($_POST['email']));
         $role = intval($_POST['role']);
 
+        // requête pour mettre à jour les infos user
         $stmt = $pdo->prepare("UPDATE user SET fname = :prenom, lname = :nom, email = :email, role = :role WHERE id_user = :id_user");
         $stmt->bindParam(':prenom', $prenom);
         $stmt->bindParam(':nom', $nom);
@@ -45,20 +55,23 @@ try {
         $message = "Les informations de l'utilisateur ont été mises à jour.";
     }
 
-    // Récupération des données des utilisateurs
+    // récup de tous les users avec leurs rôles
     $users = $pdo->query("
         SELECT u.id_user, u.fname, u.lname, u.email, r.role AS role_name, r.id_role 
         FROM user u 
         JOIN role r ON u.role = r.id_role
     ")->fetchAll(PDO::FETCH_ASSOC);
 
-    // Récupération des rôles disponibles
+    // récup des rôles dispos pour édition
     $roles = $pdo->query("SELECT id_role, role FROM role")->fetchAll(PDO::FETCH_ASSOC);
+
 } catch (PDOException $e) {
+    // affiche msg erreur si pb avec la bdd
     echo "Erreur : " . $e->getMessage();
     exit();
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>

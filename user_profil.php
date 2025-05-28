@@ -1,47 +1,54 @@
 <?php
+// démarre session
 session_start();
+
+// vérif que le user est connecté et a un rôle valide (1, 2 ou 3), sinon redirige
 if (!isset($_SESSION['id_role'], $_SESSION['id_user']) || !in_array($_SESSION['id_role'], [1, 2, 3])) {
     header("Location: login.php");
     exit();
 }
 
+// détermine la page d'accueil selon le rôle
 $homePage = '';
 if (isset($_SESSION['id_role'])) {
     switch ($_SESSION['id_role']) {
-        case 1: // Visiteur
+        case 1:
             $homePage = 'accueil_visiteur.php';
             break;
-        case 2: // Comptable
+        case 2:
             $homePage = 'accueil_comptable.php';
             break;
-        case 3: // Administrateur
+        case 3:
             $homePage = 'accueil_admin.php';
             break;
         default:
-            $homePage = 'login.php'; // Redirection par défaut pour les rôles non définis
+            $homePage = 'login.php';
     }
 }
 
-// Connexion à la base de données
+// config bdd
 $servername = "localhost";
 $username = "root";
 $password = "";
 $dbname = "bisounours";
 
-$message = ''; // Variable pour stocker le message de confirmation
+// message à afficher après action
+$message = '';
 
 try {
+    // connexion pdo + gestion des erreurs activée
     $pdo = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // Vérification si le formulaire a été soumis
+    // si formulaire soumis
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $fname = trim($_POST['fname']);
         $lname = trim($_POST['lname']);
         $email = trim($_POST['email']);
 
+        // vérif que tous les champs sont remplis
         if (!empty($fname) && !empty($lname) && !empty($email)) {
-            // Mise à jour des informations dans la base de données
+            // maj des infos user en bdd
             $stmt = $pdo->prepare("
                 UPDATE user 
                 SET fname = :fname, lname = :lname, email = :email 
@@ -53,27 +60,31 @@ try {
             $stmt->bindParam(':id_user', $_SESSION['id_user']);
             $stmt->execute();
 
-            // Message de confirmation
+            // msg de confirmation
             $message = "Modification appliquée avec succès !";
         } else {
+            // msg si champs manquants
             $message = "Veuillez remplir tous les champs.";
         }
     }
 
-    // Récupérer les informations actuelles de l'utilisateur
+    // récup infos actuelles de l'utilisateur connecté
     $stmt = $pdo->prepare("SELECT fname, lname, email FROM user WHERE id_user = :id_user");
     $stmt->bindParam(':id_user', $_SESSION['id_user']);
     $stmt->execute();
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
+    // si aucun user trouvé => stop avec msg
     if ($user === false) {
         die("Erreur : Aucun utilisateur trouvé pour l'identifiant donné.");
     }
 
 } catch (PDOException $e) {
+    // msg d'erreur si exception pdo
     die("Erreur : " . $e->getMessage());
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="fr">

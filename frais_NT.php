@@ -1,35 +1,44 @@
 <?php
+// démarre la session
 session_start();
+
+// vérif que user connecté a bien le rôle comptable (id_role = 2), sinon redirige vers login
 if (!isset($_SESSION['id_role']) || $_SESSION['id_role'] != 2) {
     header("Location: login.php");
     exit();
 }
 
+// config de connexion bdd
 $serveur = "localhost";
 $utilisateur = "root";
 $mdpBDD = "";
 $nomBDD = "bisounours";
 
 try {
+    // connexion à la bdd via pdo + encodage utf8
     $connexion = new PDO("mysql:host=$serveur;dbname=$nomBDD;charset=utf8", $utilisateur, $mdpBDD);
     $connexion->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // Mettre à jour le statut et l'état si un formulaire a été soumis
+    // si formulaire envoyé en POST, on traite les données
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        // vérif que les champs nécessaires sont présents
         if (isset($_POST['action'], $_POST['id_fiche'])) {
             $action = $_POST['action']; // "valider" ou "refuser"
             $id_fiche = intval($_POST['id_fiche']);
             $commentaire = !empty($_POST['commentaireComptable']) ? htmlspecialchars(trim($_POST['commentaireComptable'])) : null;
 
-            $new_status = 'Traité'; // Par défaut, on passe en "Traité"
+            // par défaut on passe le status à "Traité", état reste "En attente"
+            $new_status = 'Traité';
             $new_etat = 'En attente';
 
+            // maj de l'état selon l'action choisie
             if ($action === 'valider') {
                 $new_etat = 'Validée';
             } elseif ($action === 'refuser') {
                 $new_etat = 'Refusée';
             }
 
+            // requête pour mettre à jour la fiche
             $stmt = $connexion->prepare("
                 UPDATE fiche 
                 SET status = :status, etat = :etat, commentaireComptable = :commentaireComptable 
@@ -43,7 +52,7 @@ try {
         }
     }
 
-    // Récupérer les frais non traités
+    // récupère les fiches avec status "Non Traité"
     $requete = $connexion->prepare("
         SELECT u.fname, u.lname, f.id_fiche, f.commentaire 
         FROM fiche f
@@ -52,10 +61,13 @@ try {
     ");
     $requete->execute();
     $frais_non_traite = $requete->fetchAll(PDO::FETCH_ASSOC);
+
 } catch (PDOException $e) {
+    // stoppe le script si connexion bdd échoue
     die("Erreur de connexion à la base de données : " . $e->getMessage());
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>

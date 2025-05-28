@@ -1,49 +1,63 @@
 <?php
+// démarre session pour récup infos user
 session_start();
+
+// vérif que user connecté et a le rôle admin (id_role = 1), sinon redirige
 if (!isset($_SESSION['id_role'], $_SESSION['id_user']) || $_SESSION['id_role'] != 1) {
     header("Location: login.php");
     exit();
 }
 
+// config bdd
 $serveur = "localhost";
 $utilisateur = "root";
 $mdpBDD = "";
 $nomBDD = "bisounours";
 
 try {
-    // Connexion à la base de données via PDO
+    // init connexion à la bdd via pdo + encodage utf8
     $connexion = new PDO("mysql:host=$serveur;dbname=$nomBDD;charset=utf8", $utilisateur, $mdpBDD);
+    
+    // active les erreurs pdo en mode exception
     $connexion->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
+    // stoppe le script si pb de connexion bdd
     die("Erreur de connexion à la base de données : " . $e->getMessage());
 }
 
-// Dossier de stockage des justificatifs
+// dossier où stocker les fichiers justificatifs
 $cheminUpload = "uploads/";
+
+// crée le dossier si existe pas
 if (!is_dir($cheminUpload)) {
     mkdir($cheminUpload, 0777, true);
 }
 
-// Vérification que le formulaire a été soumis
+// vérif si formulaire envoyé (en POST)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Récupération et validation des données
+
+    // récup et sécurisation des montants
     $montants = [
         "hebergement" => !empty($_POST['montant_hebergement']) ? (float)$_POST['montant_hebergement'] : 0.00,
         "repas" => !empty($_POST['montant_repas']) ? (float)$_POST['montant_repas'] : 0.00,
         "deplacement" => !empty($_POST['montant_deplacement']) ? (float)$_POST['montant_deplacement'] : 0.00,
         "hors_frais" => !empty($_POST['montant_hors_frais']) ? (float)$_POST['montant_hors_frais'] : 0.00
     ];
+
+    // récup et sécurisation des quantités (par défaut 1)
     $quantites = [
         "hebergement" => !empty($_POST['quantite_hebergement']) ? (int)$_POST['quantite_hebergement'] : 1,
         "repas" => !empty($_POST['quantite_repas']) ? (int)$_POST['quantite_repas'] : 1,
         "deplacement" => !empty($_POST['quantite_deplacement']) ? (int)$_POST['quantite_deplacement'] : 1,
         "hors_frais" => !empty($_POST['quantite_hors_frais']) ? (int)$_POST['quantite_hors_frais'] : 1
     ];
+
+    // récup date et commentaire
     $date = !empty($_POST['date']) ? $_POST['date'] : null;
     $commentaire = !empty($_POST['commentaire']) ? htmlspecialchars(trim($_POST['commentaire'])) : null;
 
-    // Récupération de l'utilisateur connecté
-    $id_user = $_SESSION['id_user']; // Utilisation de l'ID utilisateur directement
+    // vérif que user existe bien en bdd
+    $id_user = $_SESSION['id_user'];
     $requeteUser = $connexion->prepare("SELECT id_user FROM user WHERE id_user = :id_user");
     $requeteUser->bindParam(':id_user', $id_user);
     $requeteUser->execute();
@@ -53,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         die("Utilisateur introuvable.");
     }
 
-    // Insérer dans la table Fiche
+    // insertion de la fiche de frais
     $sqlFiche = "INSERT INTO fiche (id_user, date, commentaire) VALUES (:id_user, :date, :commentaire)";
     $stmtFiche = $connexion->prepare($sqlFiche);
     $stmtFiche->bindParam(':id_user', $id_user);
@@ -61,10 +75,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmtFiche->bindParam(':commentaire', $commentaire);
 
     try {
+        // enregistre la fiche
         $stmtFiche->execute();
-        $id_fiche = $connexion->lastInsertId(); // ID de la fiche nouvellement créée
 
-        // On insère les lignes de frais dans Ligne_Frais
+        // récup id de la fiche ajoutée
+        $id_fiche = $connexion->lastInsertId();
+
+        // mapping des types de frais avec id en bdd
         $typesFrais = [
             "hebergement" => 1,
             "repas" => 2,
@@ -72,19 +89,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             "hors_frais" => 5
         ];
 
+        // boucle sur chaque type de frais
         foreach ($montants as $type => $montant) {
             if ($montant > 0) {
+                // récup fichier justificatif s’il existe
                 $justificatif = isset($_FILES['justificatif_' . $type]) ? $_FILES['justificatif_' . $type] : null;
                 $nomJustificatif = null;
 
-                // Gérer l'upload du justificatif
+                // si fichier uploadé sans erreur
                 if ($justificatif && $justificatif['error'] == 0) {
                     $nomJustificatif = $cheminUpload . basename($justificatif['name']);
+
+                    // tentative de move du fichier vers le dossier
                     if (!move_uploaded_file($justificatif['tmp_name'], $nomJustificatif)) {
-                        $nomJustificatif = null;
+                        $nomJustificatif = null; // en cas d'échec
                     }
                 }
 
+                // insertion dans table ligne_frais
                 $sqlLigneFrais = "INSERT INTO ligne_frais (id_fiche, id_typefrais, quantite, prix_unitaire, date_depense, justificatif) 
                                   VALUES (:id_fiche, :id_typefrais, :quantite, :prix_unitaire, :date_depense, :justificatif)";
                 $stmtLigneFrais = $connexion->prepare($sqlLigneFrais);
@@ -98,14 +120,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        // message success en html
         $message = "<p style='color:green; text-align:center; font-weight:bold;'>Les frais ont été enregistrés avec succès !</p>";
         echo $message;
-        
+
     } catch (PDOException $e) {
+        // en cas d'erreur lors de l'insert
         $message = "Erreur lors de l'enregistrement des données : " . $e->getMessage();
     }
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="fr">

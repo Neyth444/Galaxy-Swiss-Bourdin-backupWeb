@@ -1,34 +1,42 @@
 <?php
+// démarre la session
 session_start();
+
+// vérif que l'utilisateur est connecté et a le rôle visiteur (id_role = 1), sinon redirige
 if (!isset($_SESSION['id_role'], $_SESSION['id_user']) || $_SESSION['id_role'] != 1) {
     header("Location: login.php");
     exit();
 }
 
+// config connexion à la bdd
 $serveur = "localhost";
 $utilisateur = "root";
 $mdpBDD = "";
 $nomBDD = "bisounours";
 
 try {
+    // init de la connexion avec pdo + encodage utf8
     $connexion = new PDO("mysql:host=$serveur;dbname=$nomBDD;charset=utf8", $utilisateur, $mdpBDD);
     $connexion->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
+    // affiche erreur si pb de connexion
     die("Erreur : " . $e->getMessage());
 }
 
+// vérif que l'id de la fiche est bien présent en GET
 if (!isset($_GET['id_fiche'])) {
     die("ID de fiche manquant.");
 }
 
+// sécurise l'id de fiche en int
 $id_fiche = intval($_GET['id_fiche']);
 
-// Charger les types de frais
+// récup tous les types de frais (pour affichage dans le form plus bas)
 $stmt = $connexion->prepare("SELECT * FROM type_frais");
 $stmt->execute();
 $types_frais = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Traitement du formulaire
+// si formulaire envoyé (POST), on traite les données
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $commentaire = $_POST['commentaire'];
     $date = $_POST['date'];
@@ -36,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $quantites = $_POST['quantite'];
     $prix_unitaires = $_POST['prix_unitaire'];
 
-    // Mettre à jour la fiche
+    // maj de la fiche : commentaire et date
     $stmt = $connexion->prepare("UPDATE fiche SET commentaire = :commentaire, date = :date WHERE id_fiche = :id_fiche AND id_user = :id_user");
     $stmt->execute([
         ':commentaire' => $commentaire,
@@ -45,41 +53,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ':id_user' => $_SESSION['id_user']
     ]);
 
-    // Supprimer les lignes existantes
+    // supprime les anciennes lignes de frais pour cette fiche
     $stmt = $connexion->prepare("DELETE FROM ligne_frais WHERE id_fiche = :id_fiche");
     $stmt->execute([':id_fiche' => $id_fiche]);
 
-    // Réinsertion des lignes
+    // réinsère chaque ligne de frais saisie
     for ($i = 0; $i < count($id_types); $i++) {
         if (!empty($id_types[$i]) && is_numeric($quantites[$i]) && is_numeric($prix_unitaires[$i])) {
             $stmt = $connexion->prepare("INSERT INTO ligne_frais (id_fiche, id_typefrais, quantite, prix_unitaire) VALUES (:id_fiche, :id_typefrais, :quantite, :prix_unitaire)");
             $stmt->execute([
                 ':id_fiche' => $id_fiche,
-                ':id_typefrais' => $id_types[$i], // <-- ici on corrige la clé
+                ':id_typefrais' => $id_types[$i],
                 ':quantite' => $quantites[$i],
                 ':prix_unitaire' => $prix_unitaires[$i]
             ]);
-            
         }
     }
 
+    // redirection après maj terminée
     header("Location: fiche_frais_visiteur.php");
     exit();
 }
 
-// Charger les données existantes
+// récup données de la fiche ciblée
 $stmt = $connexion->prepare("SELECT * FROM fiche WHERE id_fiche = :id_fiche AND id_user = :id_user");
 $stmt->execute([':id_fiche' => $id_fiche, ':id_user' => $_SESSION['id_user']]);
 $fiche = $stmt->fetch(PDO::FETCH_ASSOC);
 
+// si fiche non trouvée, stoppe avec msg d'erreur
 if (!$fiche) {
     die("Fiche introuvable.");
 }
 
+// récup toutes les lignes de frais rattachées à la fiche
 $stmt = $connexion->prepare("SELECT * FROM ligne_frais WHERE id_fiche = :id_fiche");
 $stmt->execute([':id_fiche' => $id_fiche]);
 $lignes_frais = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
+
 
 <!DOCTYPE html>
 <html lang="fr">

@@ -1,33 +1,44 @@
 <?php
+// démarre la session
 session_start();
+
+// vérif que user connecté a le rôle comptable (id_role = 2), sinon redirige vers login
 if (!isset($_SESSION['id_role']) || $_SESSION['id_role'] != 2) {
     header("Location: login.php");
     exit();
 }
 
+// config connexion bdd
 $serveur = "localhost";
 $utilisateur = "root";
 $mdpBDD = "";
 $nomBDD = "bisounours";
 
 try {
+    // connexion à la bdd via pdo + encodage utf8
     $connexion = new PDO("mysql:host=$serveur;dbname=$nomBDD;charset=utf8", $utilisateur, $mdpBDD);
     $connexion->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // Récupérer les frais traités
+    // récup des fiches ayant le statut "Traité"
     $requete = $connexion->prepare("
-    SELECT u.fname, u.lname, f.id_fiche, f.etat
-    FROM fiche f
-    JOIN user u ON f.id_user = u.id_user
-    WHERE f.status = 'Traité'
-");
+        SELECT u.fname, u.lname, f.id_fiche, f.etat
+        FROM fiche f
+        JOIN user u ON f.id_user = u.id_user
+        WHERE f.status = 'Traité'
+    ");
 
+    // exécution de la requête
     $requete->execute();
+
+    // stockage des résultats dans un tableau assoc
     $frais_traite = $requete->fetchAll(PDO::FETCH_ASSOC);
+
 } catch (PDOException $e) {
+    // si erreur de connexion bdd, affiche message et stoppe script
     die("Erreur de connexion à la base de données : " . $e->getMessage());
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="fr">
