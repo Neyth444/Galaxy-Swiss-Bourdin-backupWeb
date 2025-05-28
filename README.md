@@ -2,42 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Présentation GSB Frais</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      line-height: 1.6;
-      padding: 20px;
-      background-color: #f8f9fa;
-    }
-    h2 {
-      color: #2c3e50;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 20px 0;
-    }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 12px;
-      text-align: left;
-    }
-    th {
-      background-color: #007BFF;
-      color: white;
-    }
-    tr:nth-child(even) {
-      background-color: #f2f2f2;
-    }
-    .note {
-      background-color: #fff3cd;
-      padding: 10px;
-      border-left: 4px solid #ffeeba;
-      margin-top: 10px;
-    }
-  </style>
-</head>
+  
 <body>
 
   <h2>🧬 Cas Galaxy Swiss Bourdin (GSB)</h2>
