@@ -107,6 +107,7 @@ if (!isset($_SESSION['id_role']) || $_SESSION['id_role'] != 1) {
             <img src="img/gsb.png" alt="Logo GSB">
         </div>
         <div class="navbar-buttons">
+            <a href="fiche_frais_visiteur.php">Mes fiches frais</a>
             <a href="formulaire_frais.php">Nouveau frais</a>
             <a href="deconnexion.php">Déconnexion</a>
             <a href="user_profil.php">Mon profile</a>

@@ -182,8 +182,8 @@ try {
             <img src="img/gsb.png" alt="Logo GSB">
         </div>
         <div class="navbar-buttons">
-            <a href="nouveau_compte.php">Nouvel utilisateur</a>
             <a href="accueil_admin.php">Accueil</a>
+            <a href="nouveau_compte.php">Nouvel utilisateur</a>
             <a href="deconnexion.php">Déconnexion</a>
         </div>
         <div class="navbar-user">

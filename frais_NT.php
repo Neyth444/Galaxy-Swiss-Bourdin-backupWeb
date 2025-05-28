@@ -64,23 +64,60 @@ try {
     <title>Frais Non Traités</title>
     <style>
         body {
+            background-color: #f0f8ff; 
             font-family: Arial, sans-serif;
             margin: 0;
-            background-color: #f0f8ff;
         }
+
         .navbar {
-            background-color: #007bff;
+            background-color: #007bff; 
             color: white;
             padding: 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-        .navbar a {
-            color: white;
+
+        .navbar-logo {  
+            display: flex;
+            justify-content: flex-end;
+            flex-direction: row-reverse;
+            align-items: center;
+            flex-grow: 2;
+        }
+
+        .navbar-logo img {
+            height: 50px;
+        }
+
+        .navbar-buttons {
+            flex-grow: 2;
+            text-align: center;
+        }
+
+        .navbar-buttons a {
             text-decoration: none;
-            margin: 0 15px;
-            font-weight: bold;
+            color: white;
+            margin: 0 10px;
+            padding: 10px 20px;
+            border-radius: 5px;
+            background-color: transparent;
+            border: 2px solid white;
+            transition: background-color 0.3s;
+            font-size: 16px;
+        }
+
+        .navbar-buttons a:hover {
+            background-color: white;
+            color: #007bff;
+        }
+
+        .navbar-user {
+            flex-grow: 1;
+            text-align: center;
+            color: white;
+            font-size: 16px;
         }
         .content {
             margin: 20px;
@@ -134,12 +171,21 @@ try {
         }
     </style>
 </head>
-<body>
+<body> 
     <div class="navbar">
+        <div class="navbar-logo">
+            <img src="img/gsb.png" alt="Logo GSB">
+        </div>
+        <div class="navbar-buttons">
         <a href="accueil_comptable.php">Accueil</a>
         <a href="frais_T.php">Frais Traités</a>
         <a href="deconnexion.php">Déconnexion</a>
+        </div>
+        <div class="navbar-user">
+            Connecté en tant que : <?php echo $_SESSION['role']; ?>
+        </div>
     </div>
+
     <div class="content">
         <h1>Frais Utilisateurs Non-Traités</h1>
         <table>

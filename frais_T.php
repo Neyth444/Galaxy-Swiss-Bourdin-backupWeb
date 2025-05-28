@@ -16,11 +16,12 @@ try {
 
     // Récupérer les frais traités
     $requete = $connexion->prepare("
-        SELECT u.fname, u.lname, f.id_fiche 
-        FROM fiche f
-        JOIN user u ON f.id_user = u.id_user
-        WHERE f.status = 'Traité'
-    ");
+    SELECT u.fname, u.lname, f.id_fiche, f.etat
+    FROM fiche f
+    JOIN user u ON f.id_user = u.id_user
+    WHERE f.status = 'Traité'
+");
+
     $requete->execute();
     $frais_traite = $requete->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
@@ -35,24 +36,61 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Frais Traités</title>
     <style>
-        body {
+               body {
+            background-color: #f0f8ff; 
             font-family: Arial, sans-serif;
             margin: 0;
-            background-color: #f0f8ff;
         }
+
         .navbar {
-            background-color: #007bff;
+            background-color: #007bff; 
             color: white;
             padding: 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-        .navbar a {
-            color: white;
+
+        .navbar-logo {  
+            display: flex;
+            justify-content: flex-end;
+            flex-direction: row-reverse;
+            align-items: center;
+            flex-grow: 2;
+        }
+
+        .navbar-logo img {
+            height: 50px;
+        }
+
+        .navbar-buttons {
+            flex-grow: 2;
+            text-align: center;
+        }
+
+        .navbar-buttons a {
             text-decoration: none;
-            margin: 0 15px;
-            font-weight: bold;
+            color: white;
+            margin: 0 10px;
+            padding: 10px 20px;
+            border-radius: 5px;
+            background-color: transparent;
+            border: 2px solid white;
+            transition: background-color 0.3s;
+            font-size: 16px;
+        }
+
+        .navbar-buttons a:hover {
+            background-color: white;
+            color: #007bff;
+        }
+
+        .navbar-user {
+            flex-grow: 1;
+            text-align: center;
+            color: white;
+            font-size: 16px;
         }
         .content {
             margin: 20px;
@@ -87,11 +125,20 @@ try {
     </style>
 </head>
 <body>
-    <div class="navbar">
+<div class="navbar">
+        <div class="navbar-logo">
+            <img src="img/gsb.png" alt="Logo GSB">
+        </div>
+        <div class="navbar-buttons">
         <a href="accueil_comptable.php">Accueil</a>
         <a href="frais_NT.php">Frais Non-Traités</a>
         <a href="deconnexion.php">Déconnexion</a>
+        </div>
+        <div class="navbar-user">
+            Connecté en tant que : <?php echo $_SESSION['role']; ?>
+        </div>
     </div>
+
     <div class="content">
         <h1>Frais Utilisateurs Traités</h1>
         <table>
@@ -101,6 +148,7 @@ try {
                     <th>Prénom</th>
                     <th>Numéro Fiche</th>
                     <th>Action</th>
+                    <th>Statut</th>
                 </tr>
             </thead>
             <tbody>
@@ -112,6 +160,7 @@ try {
                         <td>
                             <a href="voir_fiche.php?id_fiche=<?php echo $frais['id_fiche']; ?>" class="button-view">Voir la fiche</a>
                         </td>
+                        <td><?php echo htmlspecialchars($frais['etat']); ?></td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>

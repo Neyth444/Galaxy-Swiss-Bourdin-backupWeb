@@ -87,15 +87,18 @@ try {
             border-collapse: collapse;
             margin: 20px 0;
         }
+
         table th, table td {
             border: 1px solid #ddd;
             padding: 8px;
             text-align: left;
         }
+
         table th {
             background-color: #007bff;
             color: white;
         }
+
         .button-view {
             padding: 5px 10px;
             color: white;
@@ -106,8 +109,24 @@ try {
             text-decoration: none;
             font-size: 14px;
         }
+
         .button-view:hover {
             background-color: #218838;
+        }
+
+        .button-edit {
+            padding: 5px 10px;
+            background-color: #ffc107;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            color: black;
+        }
+
+        .button-edit:hover {
+            background-color: #e0a800;
         }
     </style>
 </head>
@@ -138,6 +157,7 @@ try {
                         <th>Total Frais</th>
                         <th>État Fiche</th>
                         <th>Actions</th>
+                        <th>Modifier</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -160,6 +180,13 @@ try {
                             </td>
                             <td>
                                 <a href="voir_fiche.php?id_fiche=<?php echo $fiche['id_fiche']; ?>" class="button-view">Voir la fiche</a>
+                            </td>
+                            <td>
+                                <?php if ($fiche['etat_fiche'] === 'En attente'): ?>
+                                    <a href="modifier_fiche.php?id_fiche=<?php echo $fiche['id_fiche']; ?>" class="button-edit">Modifier</a>
+                                <?php else: ?>
+                                    <span style="color:gray;">—</span>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
