@@ -22,7 +22,6 @@
     <li>Saisie des frais forfaitisés et hors forfait.</li>
     <li>Ajout de justificatifs pour les frais hors forfait.</li>
     <li>Consultation de l'état des fiches de frais (enregistré, validé, remboursé).</li>
-    <li>Téléchargement des fiches de frais au format PDF.</li>
   </ul>
 
   <h3>💼 Pour les comptables :</h3>
@@ -30,7 +29,6 @@
     <li>Validation ou refus des fiches de frais.</li>
     <li>Suivi des paiements et des remboursements.</li>
     <li>Possibilité de reporter certains frais au mois suivant.</li>
-    <li>Exportation des fiches de frais au format PDF.</li>
   </ul>
 
   <h3>🔧 Pour les administrateurs :</h3>
